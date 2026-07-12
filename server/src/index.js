@@ -1,7 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
 require('dotenv').config();
+
+const connectDB = require('./config/db');
 
 const allocationRoutes = require('./routes/allocation.routes');
 const bookingRoutes = require('./routes/booking.routes');
@@ -20,7 +23,11 @@ app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'AssetFlow API is running',
-    data: { version: '1.0.0', env: process.env.NODE_ENV },
+    data: {
+      version: '1.0.0',
+      env: process.env.NODE_ENV,
+      db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    },
   });
 });
 
@@ -41,8 +48,13 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`🚀 AssetFlow server running on http://localhost:${PORT}`);
-});
+const startServer = async () => {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`🚀 AssetFlow server running on http://localhost:${PORT}`);
+  });
+};
+
+startServer();
 
 module.exports = app;
